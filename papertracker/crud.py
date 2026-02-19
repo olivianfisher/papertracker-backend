@@ -13,7 +13,7 @@ def create_paper(db: Session, paper: schemas.PaperCreate):
 
 
 def get_papers(db: Session):
-    return db.query(models.Paper).all()
+    return db.query(models.Paper).filter(models.Paper.is_deleted == False).all()
 
 
 def get_weekly_summary(db: Session):
@@ -31,23 +31,40 @@ def get_weekly_summary(db: Session):
 
     return summary
 
+import urllib.parse
+
 def fetch_arxiv_papers(query: str = "machine learning", max_results: int = 5):
-    url = (
-        f"http://export.arxiv.org/api/query?"
-        f"search_query=all:{query}&start=0&max_results={max_results}"
-    )
+    try:
+        encoded_query = urllib.parse.quote(query)
 
-    feed = feedparser.parse(url)
+        url = (
+            f"http://export.arxiv.org/api/query?"
+            f"search_query=all:{encoded_query}"
+            f"&start=0"
+            f"&max_results={max_results}"
+            f"&sortBy=submittedDate"
+            f"&sortOrder=descending"
+        )
 
-    papers = []
+        feed = feedparser.parse(url)
 
-    for entry in feed.entries:
-        papers.append({
-            "title": entry.title,
-            "authors": ", ".join(author.name for author in entry.authors),
-            "summary": entry.summary,
-            "link": entry.link,
-            "published": entry.published
-        })
+        papers = []
 
-    return papers
+        for entry in feed.entries:
+            authors = ", ".join(
+                author.name for author in getattr(entry, "authors", [])
+            )
+
+            papers.append({
+                "title": getattr(entry, "title", "No title"),
+                "authors": authors,
+                "summary": getattr(entry, "summary", ""),
+                "link": getattr(entry, "link", ""),
+                "published": getattr(entry, "published", "")
+            })
+
+        return papers
+
+    except Exception as e:
+        print("ARXIV ERROR:", e)
+        return []

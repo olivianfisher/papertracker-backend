@@ -3,6 +3,8 @@ from datetime import datetime
 from .database import Base
 
 
+from sqlalchemy import Boolean
+
 class Paper(Base):
     __tablename__ = "papers"
 
@@ -12,3 +14,4 @@ class Paper(Base):
     abstract = Column(Text)
     notes = Column(Text)
     created_at = Column(DateTime, default=datetime.utcnow)
+    is_deleted = Column(Boolean, default=False)
