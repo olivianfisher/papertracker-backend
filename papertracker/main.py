@@ -44,10 +44,24 @@ def weekly_summary(db: Session = Depends(get_db)):
 def root():
     return {"message": "PaperTracker API is running"}
 
-@app.get("/recommendations") 
-def get_recommendations(query: str = Query("machine learning")): 
-    papers = crud.fetch_arxiv_papers(query=query) 
-    return {"recommendations": papers}
+@app.get("/recommendations")
+def get_recommendations(
+    db: Session = Depends(get_db),
+    query: str | None = Query(None)
+):
+    if not query:
+        query = crud.extract_keywords_from_library(db)
+
+    arxiv = crud.fetch_arxiv_papers(query)
+    biorxiv = crud.fetch_biorxiv_papers(query)
+    pubmed = crud.fetch_pubmed_papers(query)
+
+    combined = arxiv + biorxiv + pubmed
+
+    return {
+        "query_used": query,
+        "recommendations": combined
+    }
 
 @app.delete("/papers/{paper_id}")
 def soft_delete_paper(paper_id: int, db: Session = Depends(get_db)):

@@ -13,5 +13,6 @@ class Paper(Base):
     authors = Column(String)
     abstract = Column(Text)
     notes = Column(Text)
+    link = Column(String)
     created_at = Column(DateTime, default=datetime.utcnow)
     is_deleted = Column(Boolean, default=False)
